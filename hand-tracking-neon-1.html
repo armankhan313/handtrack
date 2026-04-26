@@ -3,234 +3,366 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Hand Connect — by Arman</title>
+<title>Hand Connect — Arman</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #020408; overflow: hidden; height: 100vh; width: 100vw; font-family: 'Share Tech Mono', monospace; }
-  #app { position: relative; width: 100vw; height: 100vh; }
-  #video { position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.3; }
-  #canvas { position: absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1); }
-  #scanline { position:absolute; inset:0; pointer-events:none; z-index:4; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px); }
-  .corner { position:absolute; width:28px; height:28px; z-index:10; pointer-events:none; }
-  #c-tl { top:10px; left:10px; border-top:2px solid #00f5ff; border-left:2px solid #00f5ff; }
-  #c-tr { top:10px; right:10px; border-top:2px solid #00f5ff; border-right:2px solid #00f5ff; }
-  #c-bl { bottom:10px; left:10px; border-bottom:2px solid #00f5ff; border-left:2px solid #00f5ff; }
-  #c-br { bottom:10px; right:10px; border-bottom:2px solid #00f5ff; border-right:2px solid #00f5ff; }
-  #hud { position:absolute; top:16px; left:16px; z-index:10; display:flex; flex-direction:column; gap:5px; }
-  .hud-row { font-size:11px; color:#00f5ff; text-shadow:0 0 8px #00f5ff; letter-spacing:1px; }
-  .hud-val { color:#fff; }
-  #badge { position:absolute; top:16px; right:16px; z-index:10; font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; padding:7px 14px; border:1px solid rgba(0,245,255,0.5); color:#00f5ff; text-shadow:0 0 8px #00f5ff; box-shadow:0 0 15px rgba(0,245,255,0.2); background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
-  #creator { position:absolute; bottom:72px; right:14px; z-index:10; text-align:right; pointer-events:none; animation:cpulse 3s ease-in-out infinite; }
-  #creator .by { font-size:9px; letter-spacing:3px; color:rgba(255,255,255,0.35); }
-  #creator .name { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; letter-spacing:2px; background:linear-gradient(90deg,#ff4500,#ff0000,#cc0000); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 10px rgba(255,50,0,0.9)); }
-  #creator .sharingan { display:inline-block; animation:rotateit 4s linear infinite; filter:drop-shadow(0 0 8px red); }
-  #creator .alias { font-size:9px; letter-spacing:2px; color:#ff4500; text-shadow:0 0 8px rgba(255,69,0,0.8); margin-top:2px; }
-  @keyframes cpulse { 0%,100%{opacity:1;transform:translateY(0)} 50%{opacity:.7;transform:translateY(-2px)} }
-  @keyframes rotateit { to{transform:rotate(360deg)} }
-  #title-overlay { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); text-align:center; z-index:10; pointer-events:none; }
-  #title-overlay h1 { font-family:'Orbitron',sans-serif; font-size:clamp(13px,3.5vw,24px); font-weight:900; letter-spacing:4px; background:linear-gradient(90deg,#00f5ff,#ff00ff,#00ff88); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 10px rgba(0,245,255,0.6)); }
-  #title-overlay p { font-size:9px; color:rgba(255,255,255,0.35); letter-spacing:3px; margin-top:3px; }
-  #start { position:absolute; inset:0; z-index:20; background:radial-gradient(ellipse at center,#050d1a,#020408); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; }
-  #start h1 { font-family:'Orbitron',sans-serif; font-size:clamp(20px,6vw,46px); font-weight:900; letter-spacing:5px; background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:titlePulse 3s ease-in-out infinite; }
-  @keyframes titlePulse { 0%,100%{filter:drop-shadow(0 0 20px rgba(0,245,255,.8))} 50%{filter:drop-shadow(0 0 40px rgba(255,0,255,.8))} }
-  #start p { color:rgba(255,255,255,0.45); font-size:12px; letter-spacing:1px; text-align:center; max-width:300px; line-height:1.9; }
-  #startBtn { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; letter-spacing:3px; padding:14px 38px; background:transparent; border:2px solid #00f5ff; color:#00f5ff; cursor:pointer; text-shadow:0 0 10px #00f5ff; box-shadow:0 0 20px rgba(0,245,255,.3),inset 0 0 20px rgba(0,245,255,.05); transition:all .3s; }
-  #startBtn:active { box-shadow:0 0 40px rgba(0,245,255,.7); transform:scale(0.97); }
-  #loading { position:absolute; inset:0; background:#020408; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:15; }
-  .ring { width:55px; height:55px; border:3px solid rgba(0,245,255,.1); border-top:3px solid #00f5ff; border-radius:50%; animation:spinring .8s linear infinite; }
-  @keyframes spinring { to{transform:rotate(360deg)} }
-  #loading p { color:#00f5ff; font-size:11px; letter-spacing:3px; animation:blink 1.2s ease-in-out infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-  #substatus { color:rgba(255,255,255,0.3) !important; font-size:10px !important; letter-spacing:2px; margin-top:-8px; animation:none !important; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; overflow:hidden; width:100vw; height:100vh; }
+
+  #video {
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+    opacity:0.55;
+  }
+
+  #canvas {
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    z-index:2;
+  }
+
+  /* HUD top-left exactly like video */
+  #hud {
+    position:absolute; top:14px; left:14px; z-index:10;
+    font-family: 'Courier New', monospace;
+    font-size:13px; line-height:1.7;
+    color:#fff;
+    text-shadow: 0 0 6px #fff;
+  }
+  #hud span { color:#aaffaa; }
+
+  /* Gesture badge top-right */
+  #badge {
+    position:absolute; top:14px; right:14px; z-index:10;
+    font-family:'Courier New',monospace; font-size:13px;
+    color:#00ffcc; border:1px solid #00ffcc;
+    padding:5px 14px; background:rgba(0,0,0,0.5);
+    text-shadow:0 0 8px #00ffcc;
+    box-shadow:0 0 12px rgba(0,255,200,0.3);
+  }
+
+  /* Creator bottom right */
+  #creator {
+    position:absolute; bottom:60px; right:14px; z-index:10;
+    text-align:right; font-family:'Courier New',monospace;
+    animation: float 3s ease-in-out infinite;
+  }
+  #creator .by { font-size:9px; letter-spacing:3px; color:rgba(255,255,255,0.3); }
+  #creator .name {
+    font-size:18px; font-weight:900; letter-spacing:2px;
+    font-family:Arial,sans-serif;
+    background:linear-gradient(90deg,#ff4500,#ff0000);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 12px rgba(255,50,0,1));
+  }
+  #creator .spin { display:inline-block; animation:sp 3s linear infinite; }
+  #creator .alias { font-size:9px; letter-spacing:3px; color:#ff4500; text-shadow:0 0 10px #ff4500; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  @keyframes sp { to{transform:rotate(360deg)} }
+
+  /* Title bottom center */
+  #title {
+    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+    z-index:10; text-align:center; pointer-events:none;
+    font-family:Arial,sans-serif; white-space:nowrap;
+  }
+  #title h1 {
+    font-size:clamp(12px,4vw,22px); font-weight:900; letter-spacing:5px;
+    background:linear-gradient(90deg,#00f5ff,#ff00ff,#00ff88);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 8px rgba(0,245,255,0.8));
+  }
+
+  /* START SCREEN */
+  #start {
+    position:absolute; inset:0; z-index:30;
+    background:radial-gradient(ellipse at 50% 40%, #0a1628 0%, #000 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+  }
+  #start h1 {
+    font-family:Arial,sans-serif; font-size:clamp(26px,7vw,52px); font-weight:900; letter-spacing:6px;
+    background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    animation:glow 2.5s ease-in-out infinite;
+  }
+  @keyframes glow {
+    0%,100%{filter:drop-shadow(0 0 15px rgba(0,245,255,1))}
+    50%{filter:drop-shadow(0 0 35px rgba(255,0,255,1))}
+  }
+  #start .sub { color:rgba(255,255,255,0.4); font-size:13px; letter-spacing:2px; text-align:center; font-family:'Courier New',monospace; }
+  #start .tip { color:rgba(255,255,255,0.25); font-size:11px; letter-spacing:1px; text-align:center; font-family:'Courier New',monospace; line-height:1.8; }
+  #btn {
+    font-family:Arial,sans-serif; font-size:15px; font-weight:900; letter-spacing:4px;
+    padding:18px 48px; background:transparent;
+    border:2px solid #00f5ff; color:#00f5ff; cursor:pointer;
+    text-shadow:0 0 15px #00f5ff;
+    box-shadow:0 0 30px rgba(0,245,255,.5), inset 0 0 30px rgba(0,245,255,.08);
+    transition:all .25s;
+  }
+  #btn:active { transform:scale(0.95); box-shadow:0 0 60px rgba(0,245,255,.9); }
+
+  /* LOADING */
+  #loading {
+    position:absolute; inset:0; background:#000;
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:22px; z-index:20;
+  }
+  .ring { width:64px; height:64px; border:3px solid rgba(0,245,255,.15); border-top:3px solid #00f5ff; border-radius:50%; animation:sp .7s linear infinite; }
+  #loading p { color:#00f5ff; font-family:'Courier New',monospace; font-size:12px; letter-spacing:3px; animation:blink 1s infinite; }
+  #sub2 { color:rgba(255,255,255,.3) !important; font-size:10px !important; animation:none !important; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="start">
-    <h1>HAND CONNECT</h1>
-    <p>Real-time neon hand tracking.<br>Built by Arman · Madara Uchiha 🔴</p>
-    <button id="startBtn" onclick="startApp()">ACTIVATE CAMERA</button>
-  </div>
-  <div id="loading">
-    <div class="ring"></div>
-    <p>LOADING AI MODEL...</p>
-    <p id="substatus">please wait</p>
-  </div>
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-  <div id="scanline"></div>
-  <div class="corner" id="c-tl"></div>
-  <div class="corner" id="c-tr"></div>
-  <div class="corner" id="c-bl"></div>
-  <div class="corner" id="c-br"></div>
-  <div id="hud">
-    <div class="hud-row">HANDS: <span class="hud-val" id="h-hands">0</span></div>
-    <div class="hud-row">FPS: <span class="hud-val" id="h-fps">0</span></div>
-    <div class="hud-row">GESTURE: <span class="hud-val" id="h-gest">—</span></div>
-    <div class="hud-row">SPREAD: <span class="hud-val" id="h-spread">0%</span></div>
-  </div>
-  <div id="badge">SCANNING...</div>
-  <div id="creator">
-    <div class="by">crafted by</div>
-    <div class="name"><span class="sharingan">🔴</span> ARMAN</div>
-    <div class="alias">// MADARA UCHIHA //</div>
-  </div>
-  <div id="title-overlay">
-    <h1>HAND CONNECT</h1>
-    <p>NEON HAND TRACKER · TENSORFLOW.JS</p>
-  </div>
+
+<div id="start">
+  <h1>HAND CONNECT</h1>
+  <p class="sub">NEON BEAM HAND TRACKER</p>
+  <button id="btn" onclick="startApp()">⚡ ACTIVATE</button>
+  <p class="tip">Hold both hands up facing each other<br>to see the energy beams! ✋⚡✋</p>
 </div>
+
+<div id="loading">
+  <div class="ring"></div>
+  <p>LOADING MODEL...</p>
+  <p id="sub2">please wait</p>
+</div>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<div id="hud">
+  Hands Detected: <span id="hh">0</span><br>
+  FPS: <span id="hf">0</span><br>
+  Gesture: <span id="hg">—</span><br>
+  Spread: <span id="hs">0%</span>
+</div>
+
+<div id="badge">SCANNING...</div>
+
+<div id="creator">
+  <div class="by">crafted by</div>
+  <div class="name"><span class="spin">🔴</span> ARMAN</div>
+  <div class="alias">// MADARA UCHIHA //</div>
+</div>
+
+<div id="title"><h1>HAND CONNECT</h1></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.0/dist/hand-pose-detection.min.js"></script>
 <script>
-const video = document.getElementById('video');
+const video  = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let detector = null, time = 0, particles = [];
-let lastTime = performance.now(), frameCount = 0, fps = 0;
+const ctx    = canvas.getContext('2d');
 
-const COLORS = [
-  ['#00f5ff','#ff00ff','#00ff88','#ffff00','#ff6600'],
-  ['#ff00aa','#aa00ff','#00aaff','#ffaa00','#00ffaa']
-];
+let detector = null, t = 0, particles = [];
+let lastT = performance.now(), frames = 0;
+
+// Beam colors — exactly like in the video
+const BEAM_COLORS = ['#ff00ff','#ffff00','#00ff88','#00f5ff','#ff6600'];
+
+// Finger tip indices
+const TIPS = [4, 8, 12, 16, 20];
+
+// Full skeleton connections
 const CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
 ];
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 
-function getLandmarkPx(kp) {
-  const sx = canvas.width / video.videoWidth;
-  const sy = canvas.height / video.videoHeight;
-  return { x: (video.videoWidth - kp.x) * sx, y: kp.y * sy };
+// Convert landmark to canvas pixel — flipHorizontal=true so NO manual flip needed
+function toPx(kp) {
+  return {
+    x: (kp.x / video.videoWidth)  * canvas.width,
+    y: (kp.y / video.videoHeight) * canvas.height
+  };
 }
 
-function neonLine(x1,y1,x2,y2,color,w=2) {
+// Draw a glowing neon line
+function gLine(x1,y1,x2,y2, col, w=3) {
   ctx.save();
-  ctx.shadowBlur=18; ctx.shadowColor=color; ctx.strokeStyle=color;
-  ctx.lineWidth=w+3; ctx.globalAlpha=0.25;
+  // Outer halo
+  ctx.strokeStyle = col; ctx.lineWidth = w+10; ctx.globalAlpha = 0.08;
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  ctx.globalAlpha=1; ctx.lineWidth=w; ctx.shadowBlur=12;
+  // Mid
+  ctx.lineWidth = w+4; ctx.globalAlpha = 0.25;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  // Core
+  ctx.lineWidth = w; ctx.globalAlpha = 1;
+  ctx.shadowBlur = 18; ctx.shadowColor = col;
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   ctx.restore();
 }
 
-function neonDot(x,y,r,color) {
+// Draw glowing dot
+function gDot(x,y,r,col) {
   ctx.save();
-  ctx.shadowBlur=22; ctx.shadowColor=color; ctx.fillStyle=color;
+  ctx.fillStyle = col; ctx.globalAlpha = 0.2;
+  ctx.beginPath(); ctx.arc(x,y,r*3,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = col;
+  ctx.fillStyle = col;
   ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.beginPath(); ctx.arc(x,y,r*0.35,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.shadowBlur = 5;
+  ctx.beginPath(); ctx.arc(x,y,r*.4,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-function addParticle(x,y,color) {
-  particles.push({x,y,color,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4-1,life:1,size:Math.random()*3+2});
-  if(particles.length>200) particles.shift();
+// Wavy beam between two points — KEY FEATURE from video
+function drawBeam(p1, p2, col, phase) {
+  const segs = 24, pts = [];
+  for (let s=0; s<=segs; s++) {
+    const tt = s/segs;
+    const bx = p1.x + (p2.x-p1.x)*tt;
+    const by = p1.y + (p2.y-p1.y)*tt;
+    const len = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+    const px2 = -(p2.y-p1.y)/len;
+    const py2 =  (p2.x-p1.x)/len;
+    const amp = len * 0.06;
+    const wave = Math.sin(tt*Math.PI*5 + t*0.12 + phase) * amp;
+    pts.push({ x: bx + px2*wave, y: by + py2*wave });
+  }
+  // Draw layered for glow effect
+  [10,5,2].forEach((lw, li) => {
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = lw;
+    ctx.globalAlpha = li===2 ? 1 : (li===1 ? 0.4 : 0.15);
+    ctx.shadowBlur = li===2 ? 22 : 0;
+    ctx.shadowColor = col;
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    pts.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // Spark at midpoint
+  const mid = pts[Math.floor(segs/2)];
+  if (Math.random() < 0.4) spawnParticle(mid.x, mid.y, col);
+}
+
+function spawnParticle(x,y,col) {
+  particles.push({x,y,col,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:1,r:Math.random()*3+1.5});
+  if(particles.length>300) particles.shift();
 }
 
 function drawParticles() {
-  particles = particles.filter(p=>p.life>0.02);
-  for(const p of particles) {
-    p.x+=p.vx; p.y+=p.vy; p.vy+=0.06; p.life*=0.92;
-    ctx.save(); ctx.globalAlpha=p.life*0.6; ctx.shadowBlur=8; ctx.shadowColor=p.color; ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); ctx.fill(); ctx.restore();
+  particles = particles.filter(p=>p.life>.02);
+  for(const p of particles){
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.07; p.life*=.90;
+    ctx.save(); ctx.globalAlpha=p.life*.7; ctx.shadowBlur=8; ctx.shadowColor=p.col;
+    ctx.fillStyle=p.col;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
 }
 
-function drawBeams(k1,k2) {
-  const tips=[4,8,12,16,20], cols=['#00f5ff','#ff00ff','#00ff88','#ffff00','#ff6600'];
-  for(let i=0;i<tips.length;i++) {
-    const p1=getLandmarkPx(k1[tips[i]]), p2=getLandmarkPx(k2[tips[i]]), col=cols[i];
-    const segs=18, pts=[];
-    for(let s=0;s<=segs;s++) {
-      const t=s/segs, bx=p1.x+(p2.x-p1.x)*t, by=p1.y+(p2.y-p1.y)*t;
-      const px=-(p2.y-p1.y), py=p2.x-p1.x, len=Math.hypot(px,py)||1;
-      const wave=Math.sin(t*Math.PI*4+time*0.08+i)*9;
-      pts.push({x:bx+(px/len)*wave, y:by+(py/len)*wave});
-    }
-    ctx.save(); ctx.shadowBlur=18; ctx.shadowColor=col; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.globalAlpha=0.9;
-    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
-    for(let s=1;s<pts.length;s++) ctx.lineTo(pts[s].x,pts[s].y);
-    ctx.stroke(); ctx.restore();
-    const mid=pts[Math.floor(segs/2)];
-    if(Math.random()<0.35) addParticle(mid.x,mid.y,col);
-  }
-}
-
-function detectGesture(kps) {
-  const tips=[4,8,12,16,20], bases=[3,6,10,14,18];
+function gesture(kps) {
   let ext=0;
+  const tips=[4,8,12,16,20], bases=[3,6,10,14,18];
   for(let i=1;i<5;i++) if(kps[tips[i]].y<kps[bases[i]].y) ext++;
-  if(ext===0) return 'FIST';
-  if(ext===4) return 'OPEN';
-  if(ext===1) return 'POINT';
-  if(ext===2) return 'PEACE ✌️';
-  return 'HAND';
+  if(ext===0) return 'Fist';
+  if(ext===4) return 'Open';
+  if(ext===1) return 'Point';
+  if(ext===2) return 'Peace';
+  return 'Hand';
 }
 
-async function detect() {
-  time++;
-  if(detector && video.readyState>=2) {
+async function loop() {
+  t++;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawParticles();
+
+  if(detector && video.readyState>=2 && video.videoWidth>0) {
     let hands=[];
-    try { hands = await detector.estimateHands(video,{flipHorizontal:false}); } catch(e){}
+    try { hands = await detector.estimateHands(video,{flipHorizontal:true}); } catch(e){}
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawParticles();
-    document.getElementById('h-hands').textContent = hands.length;
+    document.getElementById('hh').textContent = hands.length;
 
-    if(hands.length>=2) drawBeams(hands[0].keypoints, hands[1].keypoints);
+    // ===== MAIN FEATURE: BEAMS BETWEEN BOTH HANDS =====
+    if(hands.length>=2) {
+      const kps1 = hands[0].keypoints;
+      const kps2 = hands[1].keypoints;
 
-    hands.forEach((hand,hi)=>{
-      const kps=hand.keypoints, cols=COLORS[hi%2];
-      CONNECTIONS.forEach(([a,b],ci)=>{
-        const pa=getLandmarkPx(kps[a]), pb=getLandmarkPx(kps[b]);
-        neonLine(pa.x,pa.y,pb.x,pb.y,cols[ci%cols.length]);
+      // Draw beams between each fingertip pair — THIS IS THE MONEY SHOT
+      TIPS.forEach((tip, i) => {
+        const p1 = toPx(kps1[tip]);
+        const p2 = toPx(kps2[tip]);
+        drawBeam(p1, p2, BEAM_COLORS[i], i*1.2);
       });
-      kps.forEach((kp,li)=>{
-        const p=getLandmarkPx(kp), col=cols[li%cols.length], isTip=[4,8,12,16,20].includes(li);
-        neonDot(p.x,p.y,isTip?7:4,col);
-        if(isTip&&Math.random()<0.4) addParticle(p.x,p.y,col);
+
+      // Also beam between palms
+      drawBeam(toPx(kps1[0]), toPx(kps2[0]), 'rgba(255,255,255,0.6)', 2.5);
+    }
+
+    // Draw skeleton on each hand
+    hands.forEach((hand, hi) => {
+      const kps = hand.keypoints;
+      const hcol = hi===0 ? '#00f5ff' : '#ff00aa';
+
+      CONNECTIONS.forEach(([a,b]) => {
+        const pa=toPx(kps[a]), pb=toPx(kps[b]);
+        gLine(pa.x,pa.y,pb.x,pb.y, hcol, 2);
       });
-      const gest=detectGesture(kps);
-      document.getElementById('h-gest').textContent=gest;
-      document.getElementById('badge').textContent=gest;
-      const w=kps[0],m=kps[12], spread=Math.min(100,Math.round(Math.hypot(m.x-w.x,m.y-w.y)*1.5));
-      document.getElementById('h-spread').textContent=spread+'%';
+
+      kps.forEach((kp,li) => {
+        const p=toPx(kp);
+        const isTip = TIPS.includes(li);
+        gDot(p.x,p.y, isTip?8:4, isTip?BEAM_COLORS[TIPS.indexOf(li)]||hcol:hcol);
+        if(isTip && Math.random()<.4) spawnParticle(p.x,p.y, BEAM_COLORS[TIPS.indexOf(li)]||hcol);
+      });
+
+      const g = gesture(kps);
+      document.getElementById('hg').textContent = g;
+      document.getElementById('badge').textContent = g.toUpperCase();
+      const w=kps[0],m=kps[12];
+      document.getElementById('hs').textContent = Math.min(100,Math.round(Math.hypot(m.x-w.x,m.y-w.y)/video.videoWidth*190))+'%';
     });
 
-    frameCount++;
+    frames++;
     const now=performance.now();
-    if(now-lastTime>600){ fps=Math.round(frameCount*1000/(now-lastTime)); document.getElementById('h-fps').textContent=fps; frameCount=0; lastTime=now; }
+    if(now-lastT>700){
+      document.getElementById('hf').textContent=Math.round(frames*1000/(now-lastT));
+      frames=0; lastT=now;
+    }
   }
-  requestAnimationFrame(detect);
+  requestAnimationFrame(loop);
 }
 
 async function startApp() {
   document.getElementById('start').style.display='none';
-  const loading=document.getElementById('loading');
-  loading.style.display='flex';
+  const ld=document.getElementById('loading');
+  ld.style.display='flex';
   try {
-    document.getElementById('substatus').textContent='accessing camera...';
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}}});
+    document.getElementById('sub2').textContent='accessing camera...';
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }
+    });
     video.srcObject=stream;
     await new Promise(r=>{video.onloadedmetadata=r;});
     await video.play();
 
-    document.getElementById('substatus').textContent='loading hand model...';
-    detector=await handPoseDetection.createDetector(
+    document.getElementById('sub2').textContent='loading hand AI...';
+    detector = await handPoseDetection.createDetector(
       handPoseDetection.SupportedModels.MediaPipeHands,
       { runtime:'tfjs', modelType:'lite', maxHands:2 }
     );
-    loading.style.display='none';
-    detect();
-  } catch(e) {
-    loading.innerHTML=`<p style="color:#ff4444;letter-spacing:2px;text-align:center;padding:20px">ERROR:<br>${e.message}<br><br><span style="font-size:10px;color:rgba(255,255,255,0.4)">Allow camera & use Chrome browser</span></p>`;
+
+    ld.style.display='none';
+    loop();
+  } catch(err) {
+    ld.innerHTML=`<p style="color:#f44;text-align:center;padding:20px;font-family:monospace;letter-spacing:1px">
+      ${err.message}<br><br><span style="color:rgba(255,255,255,.3);font-size:11px">Use Chrome & allow camera</span></p>`;
   }
 }
 </script>
